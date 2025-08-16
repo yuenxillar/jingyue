@@ -1,0 +1,33 @@
+[package]
+name = "jingyue"
+version = "0.1.0"
+edition = "2024"
+
+
+[workspace]
+members = [
+    "jingyue-core",
+    "jingyue-server",
+    "jingyue-client"
+]
+
+[workspace.dependencies]
+tokio = { version = "1.47.1", features = ["full"]}
+hyper = { version = "1.6.0", features = ["http1", "server"]}
+tonic = { version = "0.14.1" }
+
+sqlx = {version = "0.8.6", features = ["runtime-tokio", "sqlite"]}
+
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.142" }
+
+
+dashmap = { version = "6.1.0" }
+chrono = { version =  "0.4.41" }
+tracing = { version = "0.1.41" }
+tracing-subscriber = { version =  "0.3.19", features = ["chrono"]}
+
+# thiserror = { version = "2.0.14" }
+clap = { version = "4.5.41", features = ["derive"]}
+
+toml = { version = "0.9.5" }
