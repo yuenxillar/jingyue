@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct InstanceInfoBody {
+pub struct InstanceRequestBody {
     /// 命名空间Id，默认为 "public"
     #[serde(skip_serializing_if = "Option::is_none")]
     pub namespace_id: Option<String>,
@@ -24,19 +24,19 @@ pub struct InstanceInfoBody {
 
     /// 集群名称，默认为 "DEFAULT"
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cluster_name: Option<String>,
+    pub cluster_name: Option<Box<str>>,
 
     /// 是否只查找健康实例，默认为 true
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub healthy: Option<bool>,
+    pub healthy: bool,
 
     /// 实例权重，默认为 1.0
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub weight: Option<f64>,
+    pub weight: f64,
 
     /// 是否可用，默认为 true
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
+    pub enabled: bool,
 
     /// 实例元数据，JSON格式的字符串
     /// 使用 HashMap<String, String> 来表示键值对形式的元数据
@@ -50,12 +50,12 @@ pub struct InstanceInfoBody {
     /// 是否为续约请求 (心跳)，默认为 false
     /// 注意：这个字段在注册实例时可能不常用，更多用于心跳接口
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub heart_beat: Option<bool>,
+    pub heart_beat: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct CancelInstanceBody {
+pub struct CancelInstanceRequestBody {
     /// 命名空间Id，默认为 "public"
     /// 标记为可选字段 (Option<T>)，并在序列化时如果为 None 则省略
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -126,6 +126,11 @@ impl From<HashMap<String, String>> for GetServiceInstanceListParams {
         }
     }
 }
+
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstanceItemsResponse(Vec<InstanceItem>);
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

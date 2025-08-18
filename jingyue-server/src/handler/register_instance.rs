@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use http_body_util::BodyExt;
 use hyper::Response;
+use jingyue_core::model::instance::InstanceRequestBody;
 
 use crate::{
     error::api_error::ApiError,
-    model::instance::InstanceInfoBody,
     response::{IntoResponse, api_response::ApiResponse},
     state::application_state::ApplicationState,
 };
@@ -18,7 +18,7 @@ pub(crate) async fn handle_register_instance(
 ) -> Result<Response<http_body_util::Full<hyper::body::Bytes>>, ApiError> {
     let body = req.collect().await?.to_bytes();
 
-    let data: InstanceInfoBody = serde_json::from_slice(&body)?;
+    let data: InstanceRequestBody = serde_json::from_slice(&body)?;
 
     Ok(ApiResponse::success("ok".to_string()).into_response())
 }

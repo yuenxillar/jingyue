@@ -1,17 +1,12 @@
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
 
 use hyper::{server::conn::http1, service::service_fn};
-use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
+use sqlx::{Executor, SqlitePool, sqlite::SqliteConnectOptions};
 use tokio::net::TcpListener;
-use tracing::error;
+use tracing::{error, info};
 
 use crate::{
-    ApplicationArgs,
-    config::application_config::ApplicationConfig,
-    handler::request_handler::handle_request,
-    state::application_state::ApplicationState,
-    support::{TokioIo, TokioTimer},
-    util::find_dir::find_available_db_directory,
+    config::application_config::ApplicationConfig, execute_statement::all_init_execute_sql, handler::request_handler::handle_request, model::user::User, service::{user_service::{self, UserService}, BackendService}, state::application_state::ApplicationState, support::{TokioIo, TokioTimer}, util::find_dir::find_available_db_directory, ApplicationArgs
 };
 
 pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
@@ -28,6 +23,8 @@ where
 
             let db_path = dir.join(db_name);
 
+            info!("Application DB path: {:?}", db_path);
+
             let options = SqliteConnectOptions::from_str(
                 format!("sqlite:{}", db_path.to_str().unwrap_or_default()).as_str(),
             )?
@@ -38,15 +35,23 @@ where
             let db = SqlitePool::connect_with(options).await?;
 
             // 初始化数据库操作
-            // 创建表结构 TODO
-            let state = ApplicationState { db };
 
-            Ok(state)
+            // 创建表结构及初始化
+            for sql in all_init_execute_sql().into_iter() {
+                db.execute(sql).await?;
+            }
+
+            let user: User = sqlx::query_as("SELECT id, username, password, salt, role FROM users WHERE username = ? and is_active = 1")
+            .bind("jingyue")
+            .fetch_optional(&db)
+            .await.unwrap().unwrap();
+
+            let config = ApplicationConfig::default();
+            let args = ApplicationArgs::default();
+
+            let user_service  = UserService::new(db.clone());
+            Ok(ApplicationState { db, config, args, user_service})
         })
-    }
-
-    fn init_args(&self) -> Result<ApplicationArgs, BoxError> {
-        Ok(ApplicationArgs::default())
     }
 
     fn init_log(&self) -> Result<(), BoxError> {
@@ -69,11 +74,30 @@ where
         Ok(())
     }
 
-    fn bind_server(
+    fn run_backend_service(
         &self,
-        config: ApplicationConfig,
-        state: ApplicationState,
+        state: &Arc<ApplicationState>,
     ) -> BoxFuture<'static, Result<(), BoxError>> {
+        let state = state.clone();
+        Box::pin(async move {
+            let services: Vec<Box<dyn BackendService>> = vec![];
+
+            for service in services.into_iter() {
+                let state = state.to_owned();
+                tokio::spawn(async move {
+                    service.start(state).await.unwrap();
+                });
+            }
+
+            Ok(())
+        })
+    }
+
+    fn start_server(
+        &self,
+        state: Arc<ApplicationState>,
+    ) -> BoxFuture<'static, Result<(), BoxError>> {
+        let config = state.config.clone();
         Box::pin(async move {
             let ip = if config.server.local {
                 [127, 0, 0, 1]
@@ -83,7 +107,6 @@ where
             let addr = SocketAddr::from((ip, config.server.port));
             let listener = TcpListener::bind(addr).await?;
 
-            let state = Arc::new(state);
             loop {
                 let (stream, _) = listener.accept().await?;
                 // Use an adapter to access something implementing `tokio::io` traits as if they implement
@@ -116,14 +139,13 @@ where
     {
         Box::pin(async move {
             let application = Self::default();
-            let application_args = application.init_args()?;
-            let application_config = ApplicationConfig::default();
-            let application_state = application.generate_state().await?;
 
             application.init_log()?;
-            application
-                .bind_server(application_config, application_state)
-                .await?;
+
+            let application_state = Arc::new(application.generate_state().await?);
+
+            application.run_backend_service(&application_state).await?;
+            application.start_server(application_state).await?;
 
             Ok(())
         })

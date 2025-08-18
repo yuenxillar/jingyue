@@ -6,5 +6,4 @@ edition = "2024"
 [dependencies]
 chrono.workspace = true
 serde.workspace = true
-dashmap.workspace = true
 tokio.workspace = true

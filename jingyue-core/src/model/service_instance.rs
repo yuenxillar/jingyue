@@ -19,7 +19,7 @@ pub struct ServiceInstance {
     /// 健康状态
     pub healthy: bool,            
      /// 是否临时实例
-    pub ephemeral: bool,         
-    /// 最后心跳时间
-    pub last_beat: DateTime<Utc>, 
+    pub ephemeral: bool         
+    // / 最后心跳时间
+    // pub last_beat: DateTime<Utc>, 
 }

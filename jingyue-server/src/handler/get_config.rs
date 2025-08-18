@@ -2,10 +2,10 @@ use std::{collections::HashMap, sync::Arc};
 
 use http_body_util::BodyExt;
 use hyper::Response;
+use jingyue_core::model::config::{GetConfigParams, GetConfigResponse};
 
 use crate::{
     error::api_error::ApiError,
-    model::get_config::{GetConfigParams, GetConfigResponse},
     response::{api_response::ApiResponse, IntoResponse},
     state::application_state::ApplicationState,
 };

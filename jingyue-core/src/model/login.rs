@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct UserLoginBody {
+pub struct UserLoginRequestBody {
     pub username: String,
     pub password: String,
 }

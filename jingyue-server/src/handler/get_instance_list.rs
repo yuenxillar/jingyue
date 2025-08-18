@@ -2,10 +2,10 @@ use std::{collections::HashMap, sync::Arc};
 
 use http_body_util::BodyExt;
 use hyper::Response;
+use jingyue_core::model::instance::{GetServiceInstanceListParams, InstanceItemsResponse};
 
 use crate::{
     error::api_error::ApiError,
-    model::instance::{GetServiceInstanceListParams, InstanceItem},
     response::{IntoResponse, api_response::ApiResponse},
     state::application_state::ApplicationState,
 };
@@ -24,5 +24,5 @@ pub(crate) async fn handle_get_instance_list(
 
     let params: GetServiceInstanceListParams = GetServiceInstanceListParams::from(params);
 
-    Ok(ApiResponse::success(Vec::<InstanceItem>::new()).into_response())
+    Ok(ApiResponse::success(Vec::<InstanceItemsResponse>::new()).into_response())
 }

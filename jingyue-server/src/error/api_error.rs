@@ -69,6 +69,11 @@ impl Display for ApiError {
 impl std::error::Error for ApiError {
 }
 
+impl Into<ApiError> for &'static str  {
+    fn into(self) -> ApiError {
+        ApiError::Customized(self.to_string())
+    }
+}
 
 impl Into<ApiError> for &dyn std::error::Error {
     fn into(self) -> ApiError {
@@ -84,6 +89,13 @@ impl From<hyper::Error> for ApiError {
 
 impl From<serde_json::Error> for ApiError {
     fn from(error: serde_json::Error) -> Self {
+        ApiError::Customized(error.to_string())
+    }
+}
+
+
+impl From<sqlx::Error> for ApiError {
+    fn from(error: sqlx::Error) -> Self {
         ApiError::Customized(error.to_string())
     }
 }

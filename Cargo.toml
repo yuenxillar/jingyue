@@ -16,12 +16,13 @@ tokio = { version = "1.47.1", features = ["full"]}
 hyper = { version = "1.6.0", features = ["http1", "server"]}
 tonic = { version = "0.14.1" }
 
-sqlx = {version = "0.8.6", features = ["runtime-tokio", "sqlite"]}
+sqlx = {version = "0.8.6", features = ["runtime-tokio", "sqlite", "chrono"]}
 
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.142" }
 
 
+md5 = { version = "0.8.0" }
 dashmap = { version = "6.1.0" }
 chrono = { version =  "0.4.41" }
 tracing = { version = "0.1.41" }
