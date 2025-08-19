@@ -1,9 +1,8 @@
 use std::fmt::Display;
 
-use http_body_util::Full;
-use hyper::{Response, StatusCode};
+use hyper::StatusCode;
 
-use crate::response::IntoResponse;
+use crate::response::{IntoResponse, api_response::ApiResponse};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ApiError {
@@ -46,13 +45,9 @@ impl ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> hyper::Response<http_body_util::Full<hyper::body::Bytes>> {
-        Response::builder()
-            .status(self.status())
-            .body(Full::new(self.message().to_string().into()))
-            .unwrap()
+        ApiResponse::<()>::error(self.message().to_string()).into_response()
     }
 }
-
 
 impl Display for ApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -66,14 +61,7 @@ impl Display for ApiError {
     }
 }
 
-impl std::error::Error for ApiError {
-}
-
-impl Into<ApiError> for &'static str  {
-    fn into(self) -> ApiError {
-        ApiError::Customized(self.to_string())
-    }
-}
+impl std::error::Error for ApiError {}
 
 impl Into<ApiError> for &dyn std::error::Error {
     fn into(self) -> ApiError {
@@ -93,9 +81,20 @@ impl From<serde_json::Error> for ApiError {
     }
 }
 
-
 impl From<sqlx::Error> for ApiError {
     fn from(error: sqlx::Error) -> Self {
         ApiError::Customized(error.to_string())
+    }
+}
+
+impl From<&str> for ApiError {
+    fn from(error: &str) -> Self {
+        ApiError::Customized(error.to_string())
+    }
+}
+
+impl From<String> for ApiError {
+    fn from(error: String) -> Self {
+        ApiError::Customized(error)
     }
 }

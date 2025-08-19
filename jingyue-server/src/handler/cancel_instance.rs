@@ -19,5 +19,6 @@ pub(crate) async fn handle_cancel_instance(
     let body = req.collect().await?.to_bytes();
 
     let data: CancelInstanceRequestBody = serde_json::from_slice(&body)?;
+    let _ = state.instance_service.cancel_instance(data);
     Ok(ApiResponse::success("ok".to_string()).into_response())
 }

@@ -38,7 +38,7 @@ where
 {
     fn into_response(self) -> hyper::Response<http_body_util::Full<Bytes>> {
         Response::builder()
-            .status(StatusCode::OK)
+            .status(if self.code == 0 { StatusCode::OK } else { StatusCode::INTERNAL_SERVER_ERROR })
             .body(Full::new(serde_json::to_string(&self).unwrap().into()))
             .unwrap()
     }

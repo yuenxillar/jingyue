@@ -19,6 +19,7 @@ pub(crate) async fn handle_register_instance(
     let body = req.collect().await?.to_bytes();
 
     let data: InstanceRequestBody = serde_json::from_slice(&body)?;
+    let _ = state.instance_service.register(data).await;
 
     Ok(ApiResponse::success("ok".to_string()).into_response())
 }

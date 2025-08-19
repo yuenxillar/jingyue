@@ -6,12 +6,12 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct InstanceRequestBody {
     /// 命名空间Id，默认为 "public"
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub namespace_id: Option<String>,
+    #[serde(default = "default_namespace_id")]
+    pub namespace_id: String,
 
     /// 分组名，默认为 "DEFAULT_GROUP"
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group_name: Option<String>,
+    #[serde(default = "default_group_name")]
+    pub group_name: String,
 
     /// 服务名 (必填)
     pub service_name: String,
@@ -23,19 +23,19 @@ pub struct InstanceRequestBody {
     pub port: u32,
 
     /// 集群名称，默认为 "DEFAULT"
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cluster_name: Option<Box<str>>,
+    #[serde(default = "default_cluster_name")]
+    pub cluster_name: String,
 
     /// 是否只查找健康实例，默认为 true
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default = "default_healthy")]
     pub healthy: bool,
 
     /// 实例权重，默认为 1.0
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub weight: f64,
+    #[serde(default = "default_weight")]
+    pub weight: f32,
 
     /// 是否可用，默认为 true
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default = "default_enabled")]
     pub enabled: bool,
 
     /// 实例元数据，JSON格式的字符串
@@ -49,9 +49,34 @@ pub struct InstanceRequestBody {
 
     /// 是否为续约请求 (心跳)，默认为 false
     /// 注意：这个字段在注册实例时可能不常用，更多用于心跳接口
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub heart_beat: bool,
 }
+
+fn default_namespace_id() -> String {
+    "public".to_string()
+}
+
+fn default_group_name() -> String {
+    "DEFAULT_GROUP".to_string()
+}
+
+fn default_cluster_name() -> String {
+    "DEFAULT".to_string()
+}
+
+fn default_healthy() -> bool {
+    true
+}
+
+fn default_weight() -> f32 {
+    1.0
+}
+
+fn default_enabled() -> bool {
+    true
+}
+
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -130,11 +155,11 @@ impl From<HashMap<String, String>> for GetServiceInstanceListParams {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct InstanceItemsResponse(Vec<InstanceItem>);
+pub struct InstanceItemsResponse(Vec<InstanceItemInfo>);
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct InstanceItem {
+pub struct InstanceItemInfo {
     /// IP地址
     pub ip: String,
     /// 端口号
@@ -153,7 +178,7 @@ pub struct InstanceItem {
     pub service_name: String,
     /// 实例元数据
     #[serde(default)] // 如果 JSON 中没有 metadata 字段或为 null，则使用默认值 HashMap::new()
-    pub metadata: HashMap<String, String>,
+    pub metadata: Option<HashMap<String, String>>,
     /// IP删除超时时间 (毫秒)
     pub ip_delete_timeout: u32,
     /// 实例ID生成器类型

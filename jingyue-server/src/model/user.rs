@@ -8,7 +8,7 @@ pub struct User {
     pub password: String,
     pub salt: Box<str>,
     pub role: Box<str>,
-    pub created_at: Option<NaiveDateTime>,
+    pub created_at: NaiveDateTime,
     pub updated_at: Option<NaiveDateTime>,
     pub last_login_at: Option<NaiveDateTime>,
     pub is_active: bool,

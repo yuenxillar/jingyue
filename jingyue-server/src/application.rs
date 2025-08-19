@@ -6,7 +6,9 @@ use tokio::net::TcpListener;
 use tracing::{error, info};
 
 use crate::{
-    config::application_config::ApplicationConfig, execute_statement::all_init_execute_sql, handler::request_handler::handle_request, model::user::User, service::{user_service::{self, UserService}, BackendService}, state::application_state::ApplicationState, support::{TokioIo, TokioTimer}, util::find_dir::find_available_db_directory, ApplicationArgs
+    config::application_config::ApplicationConfig, execute_statement::all_init_execute_sql, handler::request_handler::handle_request, service::{
+        backend::heartbeat_check_service::HeartbeatCheckService, instance_service::InstanceService, user_service::UserService, BackendService
+    }, state::application_state::ApplicationState, support::{TokioIo, TokioTimer}, util::find_dir::find_available_db_directory, ApplicationArgs
 };
 
 pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
@@ -41,16 +43,18 @@ where
                 db.execute(sql).await?;
             }
 
-            let user: User = sqlx::query_as("SELECT id, username, password, salt, role FROM users WHERE username = ? and is_active = 1")
-            .bind("jingyue")
-            .fetch_optional(&db)
-            .await.unwrap().unwrap();
-
             let config = ApplicationConfig::default();
             let args = ApplicationArgs::default();
 
-            let user_service  = UserService::new(db.clone());
-            Ok(ApplicationState { db, config, args, user_service})
+            let user_service = UserService::new(db.clone());
+            let instance_service   = InstanceService { instances: Default::default() };
+            Ok(ApplicationState {
+                db,
+                config,
+                args,
+                user_service,
+                instance_service,
+            })
         })
     }
 
@@ -80,7 +84,9 @@ where
     ) -> BoxFuture<'static, Result<(), BoxError>> {
         let state = state.clone();
         Box::pin(async move {
-            let services: Vec<Box<dyn BackendService>> = vec![];
+            let services: Vec<Box<dyn BackendService>> = vec![
+                Box::new(HeartbeatCheckService::default())
+            ];
 
             for service in services.into_iter() {
                 let state = state.to_owned();
@@ -108,7 +114,13 @@ where
             let listener = TcpListener::bind(addr).await?;
 
             loop {
-                let (stream, _) = listener.accept().await?;
+                let (stream, addr) = listener.accept().await?;
+                match addr {
+                    SocketAddr::V4(socket_addr_v4) => {
+                        println!("Accept connection from: {}", socket_addr_v4);
+                    },
+                    SocketAddr::V6(_) => continue,
+                }
                 // Use an adapter to access something implementing `tokio::io` traits as if they implement
                 // `hyper::rt` IO traits.
                 let io = TokioIo::new(stream);
@@ -126,7 +138,7 @@ where
                         .serve_connection(io, service)
                         .await
                     {
-                        error!("Error serving connection: {}", err);
+                        error!("Error serving connection: {}", err.to_string());
                     }
                 });
             }

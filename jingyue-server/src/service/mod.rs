@@ -1,4 +1,4 @@
-pub mod heartbeat_check_service;
+pub mod backend;
 pub mod instance_service;
 pub mod user_service;
 

@@ -1,9 +1,11 @@
-use std::sync::Arc;
+use std::{convert::Infallible, sync::Arc};
 
 use http_body_util::Full;
 use hyper::{Method, Response, StatusCode, body::Bytes};
 
-use crate::{error::api_error::ApiError, state::application_state::ApplicationState};
+use crate::{
+    error::api_error::ApiError, response::IntoResponse, state::application_state::ApplicationState,
+};
 
 use super::{
     Request, cancel_instance::handle_cancel_instance, get_config::handle_get_config,
@@ -14,8 +16,9 @@ use super::{
 pub(crate) async fn handle_request(
     req: Request,
     state: Arc<ApplicationState>,
-) -> Result<Response<Full<Bytes>>, ApiError> {
-    match (req.method(), req.uri().path()) {
+) -> Result<Response<Full<Bytes>>, Infallible> {
+    
+    let resp =match (req.method(), req.uri().path()) {
         (&Method::POST, "/jingyue/v1/client/ns/instance") => {
             handle_register_instance(req, state).await
         }
@@ -35,5 +38,8 @@ pub(crate) async fn handle_request(
             .status(StatusCode::NOT_FOUND)
             .body(Full::new(Bytes::from("Not Found")))
             .unwrap()),
-    }
+    }.map_err(ApiError::into_response);
+    Ok(
+        resp.unwrap_or_else(|e| e)
+    )
 }
